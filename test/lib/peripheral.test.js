@@ -178,10 +178,27 @@ describe('peripheral', () => {
   });
 
   describe('pair', () => {
+    test('should delegate pairing-state checks to noble', () => {
+      mockNoble.isPaired = jest.fn(() => true);
+
+      expect(peripheral.isPaired()).toBe(true);
+      expect(mockNoble.isPaired).toHaveBeenCalledWith(mockId);
+    });
+
     test('should delegate to noble, forwarding the callback', () => {
       peripheral.pair();
 
       expect(mockNoble.pair).toHaveBeenCalledWith(mockId, undefined);
+      expect(mockNoble.pair).toHaveBeenCalledTimes(1);
+    });
+
+    test('should delegate options and callback to noble', () => {
+      const options = { pin: '123456' };
+      const callback = jest.fn();
+
+      peripheral.pair(options, callback);
+
+      expect(mockNoble.pair).toHaveBeenCalledWith(mockId, options, callback);
       expect(mockNoble.pair).toHaveBeenCalledTimes(1);
     });
 
@@ -235,6 +252,16 @@ describe('peripheral', () => {
 
       await expect(promise).resolves.toBeUndefined();
       expect(mockNoble.pair).toHaveBeenCalledWith(mockId, expect.any(Function));
+      expect(mockNoble.pair).toHaveBeenCalledTimes(1);
+    });
+
+    test('should delegate options', async () => {
+      const options = { pin: '123456' };
+      const promise = peripheral.pairAsync(options);
+      mockNoble.pair.mock.calls[0][2](null);
+
+      await expect(promise).resolves.toBeUndefined();
+      expect(mockNoble.pair).toHaveBeenCalledWith(mockId, options, expect.any(Function));
       expect(mockNoble.pair).toHaveBeenCalledTimes(1);
     });
 

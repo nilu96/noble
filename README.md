@@ -396,9 +396,18 @@ await noble.pairAsync(idOrAddress);
 // or
 await peripheral.pairAsync();
 
+// Supply a PIN for authenticated Windows pairing ceremonies.
+await peripheral.pairAsync({ pin: '123456' });
+
+// A connected peripheral can be checked before prompting the user for a PIN.
+if (!peripheral.isPaired()) {
+  // request a PIN and pair
+}
+
 // Callback form is also available on both.
 noble.pair(idOrAddress, error => { /* ... */ });
 peripheral.pair(error => { /* ... */ });
+peripheral.pair({ pin: '123456' }, error => { /* ... */ });
 
 // The pairing outcome is emitted on the peripheral, and (subject, error)
 // on Noble, mirroring other events.
@@ -415,13 +424,15 @@ noble.on('pair', (peripheral, error) => { /* ... */ });
 - **A connected device is required.** The peripheral must already be
   discovered and connected (present in Noble's peripheral map) before pairing
   is requested. Pairing an unknown/untracked id fails rather than hanging.
-- **Only the `ConfirmOnly` ("Just Works") ceremony is supported.** The
-  handler auto-accepts `ConfirmOnly` requests without a UI prompt. Any other
-  ceremony (`DisplayPin`, `ProvidePassword`, `ConfirmPinMatch`, …) is **not**
-  accepted — this library has no UI to surface a PIN or password — and Windows
-  completes the operation with the corresponding failure status
-  (e.g. `RejectedByHandler` / `AuthenticationNotAllowed`), which is reported
-  back through the `pair` callback/event.
+- **`ConfirmOnly` ("Just Works") remains the default.** Calling `pair` without
+  a PIN preserves the existing behavior and protection level. Passing
+  `{ pin: string }` additionally enables the `ProvidePin` and
+  `ConfirmPinMatch` ceremonies and requests authenticated encryption. Noble
+  does not display pairing UI; applications remain responsible for securely
+  collecting the PIN from the user.
+- **`isPaired` is Windows-only state.** It returns `false` when the active
+  binding does not expose pairing state, or when the peripheral is not
+  connected and tracked by the Windows binding.
 
 ### Service Methods
 

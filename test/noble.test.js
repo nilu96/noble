@@ -667,6 +667,18 @@ describe('noble', () => {
   });
 
   describe('pair', () => {
+    test('should report pairing state exposed by the binding', () => {
+      const peripheralUuid = 'aabbccddeeff';
+      mockBindings.isPaired = jest.fn(() => true);
+
+      expect(noble.isPaired(peripheralUuid)).toBe(true);
+      expect(mockBindings.isPaired).toHaveBeenCalledWith(peripheralUuid);
+    });
+
+    test('should report unpaired when the binding has no pairing-state API', () => {
+      expect(noble.isPaired('aabbccddeeff')).toBe(false);
+    });
+
     test('should delegate to binding', () => {
       const peripheralUuid = 'aabbccddeeff';
 
@@ -674,6 +686,16 @@ describe('noble', () => {
       noble.pair(peripheralUuid);
 
       expect(mockBindings.pair).toHaveBeenCalledWith(peripheralUuid);
+      expect(mockBindings.pair).toHaveBeenCalledTimes(1);
+    });
+
+    test('should delegate a PIN to the binding', () => {
+      const peripheralUuid = 'aabbccddeeff';
+
+      mockBindings.pair = jest.fn();
+      noble.pair(peripheralUuid, { pin: '123456' });
+
+      expect(mockBindings.pair).toHaveBeenCalledWith(peripheralUuid, '123456');
       expect(mockBindings.pair).toHaveBeenCalledTimes(1);
     });
 
@@ -715,6 +737,18 @@ describe('noble', () => {
 
       await expect(promise).resolves.toBeUndefined();
       expect(mockBindings.pair).toHaveBeenCalledWith(peripheralUuid);
+    });
+
+    test('should delegate options', async () => {
+      const peripheralUuid = 'aabbccddeeff';
+      mockBindings.pair = jest.fn();
+      noble._peripherals.set(peripheralUuid, { emit: jest.fn() });
+
+      const promise = noble.pairAsync(peripheralUuid, { pin: '123456' });
+      noble._onPair(peripheralUuid, true);
+
+      await expect(promise).resolves.toBeUndefined();
+      expect(mockBindings.pair).toHaveBeenCalledWith(peripheralUuid, '123456');
     });
 
     test('should reject on failure', async () => {

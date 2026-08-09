@@ -101,13 +101,31 @@ Napi::Value NobleWinrt::Connect(const Napi::CallbackInfo& info)
     return info.Env().Undefined();
 }
 
-// pair(deviceUuid)
+// isPaired(deviceUuid)
+Napi::Value NobleWinrt::IsPaired(const Napi::CallbackInfo& info)
+{
+    CHECK_MANAGER()
+    ARG1(String)
+    auto uuid = info[0].As<Napi::String>().Utf8Value();
+    return Napi::Boolean::New(info.Env(), manager->IsPaired(uuid));
+}
+
+// pair(deviceUuid, pin?)
 Napi::Value NobleWinrt::Pair(const Napi::CallbackInfo& info)
 {
     CHECK_MANAGER()
     ARG1(String)
     auto uuid = info[0].As<Napi::String>().Utf8Value();
-    manager->Pair(uuid);
+    std::string pin;
+    if (info.Length() > 1 && !info[1].IsUndefined())
+    {
+        if (!info[1].IsString())
+        {
+            THROW("The optional PIN argument must be a string")
+        }
+        pin = info[1].As<Napi::String>().Utf8Value();
+    }
+    manager->Pair(uuid, pin);
     return info.Env().Undefined();
 }
 
@@ -325,6 +343,7 @@ Napi::Object NobleWinrt::Init(Napi::Env env, Napi::Object exports) {
         NobleWinrt::InstanceMethod("startScanning", &NobleWinrt::Scan),
         NobleWinrt::InstanceMethod("stopScanning", &NobleWinrt::StopScan),
         NobleWinrt::InstanceMethod("connect", &NobleWinrt::Connect),
+        NobleWinrt::InstanceMethod("isPaired", &NobleWinrt::IsPaired),
         NobleWinrt::InstanceMethod("pair", &NobleWinrt::Pair),
         NobleWinrt::InstanceMethod("disconnect", &NobleWinrt::Disconnect),
         NobleWinrt::InstanceMethod("cancelConnect", &NobleWinrt::CancelConnect),

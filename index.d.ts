@@ -33,6 +33,11 @@ declare module '@stoprocent/noble' {
         timeout?: number;
     }
 
+    export interface PairOptions {
+        /** PIN displayed by or configured on the peripheral. Windows only. */
+        pin?: string;
+    }
+
     export class Noble extends EventEmitter {
     
         constructor(bindings: any);
@@ -45,22 +50,25 @@ declare module '@stoprocent/noble' {
         stopScanningAsync(): Promise<void>;
         discoverAsync(): AsyncGenerator<Peripheral, void, unknown>;
         connectAsync(idOrAddress: PeripheralIdOrAddress, options?: ConnectOptions): Promise<Peripheral>;
+        /** Windows only; returns whether WinRT reports that the device is paired. */
+        isPaired(idOrAddress: PeripheralIdOrAddress): boolean;
         /**
          * Pair with a peripheral. Windows only; requires an already-connected
-         * peripheral and supports only the ConfirmOnly ("Just Works") ceremony.
+         * peripheral and supports ConfirmOnly plus caller-supplied PIN ceremonies.
          * Rejects with 'Pairing is not supported on this platform' elsewhere.
          */
-        pairAsync(idOrAddress: PeripheralIdOrAddress): Promise<void>;
+        pairAsync(idOrAddress: PeripheralIdOrAddress, options?: PairOptions): Promise<void>;
 
         startScanning(serviceUUIDs?: string[], allowDuplicates?: boolean, callback?: (error?: Error) => void): void;
         stopScanning(callback?: () => void): void;
         connect(idOrAddress: PeripheralIdOrAddress, options?: ConnectOptions, callback?: (error: Error | undefined, peripheral: Peripheral) => void): void;
         /**
          * Pair with a peripheral. Windows only; requires an already-connected
-         * peripheral and supports only the ConfirmOnly ("Just Works") ceremony.
+         * peripheral and supports ConfirmOnly plus caller-supplied PIN ceremonies.
          * Calls back with 'Pairing is not supported on this platform' elsewhere.
          */
         pair(idOrAddress: PeripheralIdOrAddress, callback?: (error: Error | null) => void): void;
+        pair(idOrAddress: PeripheralIdOrAddress, options: PairOptions, callback?: (error: Error | null) => void): void;
         cancelConnect(idOrAddress: PeripheralIdOrAddress, options?: object): void;
         reset(): void;
         stop(): void;
@@ -119,8 +127,10 @@ declare module '@stoprocent/noble' {
         readonly uuid: string;
     
         connectAsync(): Promise<void>;
-        /** Windows only; ConfirmOnly ("Just Works") ceremony only. */
-        pairAsync(): Promise<void>;
+        /** Windows only; returns whether WinRT reports that the device is paired. */
+        isPaired(): boolean;
+        /** Windows only; supports ConfirmOnly and caller-supplied PIN ceremonies. */
+        pairAsync(options?: PairOptions): Promise<void>;
         disconnectAsync(): Promise<void>;
         updateRssiAsync(): Promise<number>;
         discoverServicesAsync(): Promise<Service[]>;
@@ -131,8 +141,9 @@ declare module '@stoprocent/noble' {
         writeHandleAsync(handle: number, data: Buffer, withoutResponse: boolean): Promise<void>;
 
         connect(callback?: (error: Error | undefined) => void): void;
-        /** Windows only; ConfirmOnly ("Just Works") ceremony only. */
+        /** Windows only; supports ConfirmOnly and caller-supplied PIN ceremonies. */
         pair(callback?: (error: Error | null) => void): void;
+        pair(options: PairOptions, callback?: (error: Error | null) => void): void;
         disconnect(callback?: () => void): void;
         updateRssi(callback?: (error: Error | undefined, rssi: number) => void): void;
         discoverServices(): void;
